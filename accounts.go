@@ -1,3 +1,4 @@
+//accounts.go описаны методы работы с аккаунтами
 package main
 
 import (
@@ -11,6 +12,7 @@ type Account struct {
 	Balance int `json:"balance"`
 }
 
+//Create создает аккаунт в бд
 func (account *Account) Create() map[string]interface{} {
 	tx := GetDB().Begin()
 	defer func() {
@@ -20,7 +22,8 @@ func (account *Account) Create() map[string]interface{} {
 	}()
 
 	if err := tx.Error; err != nil {
-		response := Message(false, err.Error())
+		response := Message(false, "error")
+		response["err"] = err.Error()
 		return response
 	}
 
@@ -34,12 +37,13 @@ func (account *Account) Create() map[string]interface{} {
 		return response
 	}
 
-	response := Message(true, "Account has been created")
-	response["account"] = account
+	response := Message(true, "Аккаунт создан")
+	response["id"] = account.ID
 	tx.Commit()
 	return response
 }
 
+//CreditMoneyFor зачисляет деньги на баланс аккауна
 func CreditMoneyFor(u uint, sum int) map[string]interface{} {
 	tx := GetDB().Begin()
 	defer func() {
@@ -78,6 +82,8 @@ func CreditMoneyFor(u uint, sum int) map[string]interface{} {
 	tx.Commit()
 	return response
 }
+
+//DebitMoneyFromTo переводит деньги с баланса одного аккаунта другому
 func DebitMoneyFromTo(u, u2 uint, sum int) map[string]interface{} {
 	tx := GetDB().Begin()
 	defer func() {
@@ -85,12 +91,10 @@ func DebitMoneyFromTo(u, u2 uint, sum int) map[string]interface{} {
 			tx.Rollback()
 		}
 	}()
-
 	if err := tx.Error; err != nil {
 		response := Message(false, err.Error())
 		return response
 	}
-
 	var acc1, acc2 Account
 	if err := tx.Table("accounts").Where("id = ?", u).First(&acc1).Error; err != nil {
 		tx.Rollback()
@@ -132,11 +136,13 @@ func DebitMoneyFromTo(u, u2 uint, sum int) map[string]interface{} {
 		return response
 	}
 	response := Message(true, "success")
-	response["user_from transact_id"] = transactId1
-	response["user_to transact_id"] = transactId2
+	response["transact_id_user"] = transactId1
+	response["transact_id_user_to"] = transactId2
 	tx.Commit()
 	return response
 }
+
+//DebitMoneyFrom списывает деньги с баланса аккаунта
 func DebitMoneyFrom(u uint, sum int, target string) map[string]interface{} {
 	tx := GetDB().Begin()
 	defer func() {
@@ -175,6 +181,8 @@ func DebitMoneyFrom(u uint, sum int, target string) map[string]interface{} {
 	tx.Commit()
 	return response
 }
+
+//ReturnBalance возвращает баланс аккаунта
 func ReturnBalance(u uint) (error, int) {
 	tx := GetDB().Begin()
 	defer func() {

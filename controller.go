@@ -1,3 +1,4 @@
+//controller.go описаны методы работы с api
 package main
 
 import (
@@ -18,6 +19,9 @@ var CreateAccount = func(w http.ResponseWriter, r *http.Request) {
 }
 
 //GetBalance возвращает баланс аккаунта
+//api /api/account/balance
+//user_id: id аккаунта
+//currency: валюта, для отображения баланса. если не указано то в базовой валюте - рублях
 var GetBalance = func(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -35,7 +39,7 @@ var GetBalance = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	currency := r.URL.Query().Get("currency")
-	if currency != "" || currency != "RUB" {
+	if currency != "" {
 		currency = strings.ToUpper(currency)
 		ex, err2 := Exchange(currency)
 		if err2 != nil {
@@ -57,6 +61,10 @@ var GetBalance = func(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+//CreditMoney зачисляет деньги на счет
+//api /api/account/credit
+//user_id: id аккаунта для зачисления денег
+//sum: сумма
 var CreditMoney = func(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -81,11 +89,14 @@ var CreditMoney = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := CreditMoneyFor(uint(id), sum)
-
-	//resp := Message(true, "success")
-	//resp["data"] = data
 	Respond(w, data)
 }
+
+//DebitMoney списывает деньги со счета
+//api /api/account/debit
+//user_id: id аккаунта с которого списать деньги
+//sum: сумма
+//target: цель списания (корзина покупателя, товар...)
 var DebitMoney = func(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -96,6 +107,7 @@ var DebitMoney = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err1, balance := ReturnBalance(uint(id))
+	//проверка что аккаунт существует
 	if err1 != nil {
 		resp := Message(false, "error")
 		resp["err"] = err1.Error()
@@ -133,6 +145,12 @@ var DebitMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, data)
 	}
 }
+
+//GetTransact возвращает все транзакции по аккаунту
+//api /api/account/transacts
+//user_id: id аккаунта для которого запрашиваются транзакции
+//
+//
 var GetTransacts = func(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -154,6 +172,12 @@ var GetTransacts = func(w http.ResponseWriter, r *http.Request) {
 	resp["data"] = data
 	Respond(w, resp)
 }
+
+//TransferMoney переводит деньги с баланса одного пользователя другому
+//api /api/account/transfer
+//user_id: id аккаунта с которого списать деньги
+//user_id_to: id аккаунта куда зачислить деньги
+//sum: сумма
 var TransferMoney = func(w http.ResponseWriter, r *http.Request) {
 
 	idFrom, errId1 := strconv.Atoi(r.URL.Query().Get("user_id"))

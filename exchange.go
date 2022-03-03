@@ -1,3 +1,4 @@
+//exchange.go метод конвертации валюты
 package main
 
 import (
@@ -21,6 +22,7 @@ func Exchange(currency string) (float64, error) {
 	if len(currency) != 3 {
 		return 0, fmt.Errorf("Неверно указана валюта")
 	}
+	//узнаем курс RUB/EUR
 	urlBase := fmt.Sprintf("http://api.exchangeratesapi.io/v1/latest?access_key=98fbf5fe43eb337e647d2fa87b3ee2c2&symbols=%s", "RUB")
 	respBase, err1 := http.Get(urlBase)
 	defer respBase.Body.Close()
@@ -34,11 +36,12 @@ func Exchange(currency string) (float64, error) {
 	if err2 != nil {
 		return 0, err2
 	}
+
 	exBase := exchBase.Rates["RUB"]
 	if currency == "EUR" {
 		return 1 / exBase, nil
 	}
-
+	//узнаем курс к требуемой валюте
 	urlCurrency := fmt.Sprintf("http://api.exchangeratesapi.io/v1/latest?access_key=98fbf5fe43eb337e647d2fa87b3ee2c2&symbols=%s", currency)
 	respCurrency, err3 := http.Get(urlCurrency)
 	defer respCurrency.Body.Close()
@@ -54,6 +57,7 @@ func Exchange(currency string) (float64, error) {
 		return 0, err4
 	}
 	exCurrency := exchCurrency.Rates[currency]
+
 	currencyNow := exCurrency / exBase
 	return currencyNow, nil
 }

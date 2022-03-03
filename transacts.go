@@ -1,3 +1,4 @@
+//transacts.go функции работы с транзакциями
 package main
 
 import (
@@ -14,6 +15,7 @@ type Transact struct {
 	AccountId uint   `json:"account_id"` //The account that this transact belongs to
 }
 
+//Create создает новую транзакцию
 func (transact *Transact) Create() (error, uint) {
 	tx := GetDB().Begin()
 	defer func() {
@@ -32,22 +34,11 @@ func (transact *Transact) Create() (error, uint) {
 		//response := Message(false, "error bd")
 		return err, 0
 	}
-	//resp := Message(true, "success")
-	//resp["transact_id"] = transact.ID
 	tx.Commit()
 	return nil, transact.ID
 }
 
-func GetTransact(id uint) *Transact {
-
-	transact := &Transact{}
-	err := GetDB().Table("transact").Where("account_id = ?", id).First(transact).Error
-	if err != nil {
-		return nil
-	}
-	return transact
-}
-
+//GetTrancacts возвращает все транзакции по указанному id аккаунта
 func GetTransactsFor(account uint) []*Transact {
 
 	transacts := make([]*Transact, 0)
