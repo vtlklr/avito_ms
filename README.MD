@@ -1,0 +1,1 @@
+docker run --name avitoms -p 5432:5432 -e POSTGRES_USER=avitoms -e POSTGRES_PASSWORD=password -e POSTGRES_DB=avitoms -d postgres:13.3
