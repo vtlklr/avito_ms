@@ -74,13 +74,7 @@ var CreditMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	err1, _ := ReturnBalance(uint(id))
-	if err1 != nil {
-		resp := Message(false, "error")
-		resp["err"] = err1.Error()
-		Respond(w, resp)
-		return
-	}
+
 	sum, err2 := strconv.Atoi(r.URL.Query().Get("sum"))
 	if err2 != nil {
 		resp := Message(false, "error")
@@ -88,7 +82,14 @@ var CreditMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	data := CreditMoneyFor(uint(id), sum)
+	err1, data := CreditMoneyFor(uint(id), sum)
+	if err1 != nil {
+		resp := Message(false, "error")
+		resp["err"] = err1.Error()
+		Respond(w, resp)
+		return
+
+	}
 	Respond(w, data)
 }
 
@@ -106,14 +107,7 @@ var DebitMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	err1, balance := ReturnBalance(uint(id))
-	//проверка что аккаунт существует
-	if err1 != nil {
-		resp := Message(false, "error")
-		resp["err"] = err1.Error()
-		Respond(w, resp)
-		return
-	}
+
 	sum, err2 := strconv.Atoi(r.URL.Query().Get("sum"))
 	if err2 != nil {
 		resp := Message(false, "error")
@@ -134,16 +128,15 @@ var DebitMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	if balance < sum {
+
+	err3, data := DebitMoneyFrom(uint(id), sum, target)
+	if err3 != nil {
 		resp := Message(false, "error")
-		resp["err"] = "не достаточно денег на балансе"
+		resp["err"] = err3.Error()
 		Respond(w, resp)
-
-	} else {
-		data := DebitMoneyFrom(uint(id), sum, target)
-
-		Respond(w, data)
+		return
 	}
+	Respond(w, data)
 }
 
 //GetTransact возвращает все транзакции по аккаунту
@@ -160,14 +153,14 @@ var GetTransacts = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	err1, _ := ReturnBalance(uint(id))
+
+	err1, data := GetTransactsFor(uint(id))
 	if err1 != nil {
 		resp := Message(false, "error")
 		resp["err"] = err1.Error()
 		Respond(w, resp)
 		return
 	}
-	data := GetTransactsFor(uint(id))
 	resp := Message(true, "success")
 	resp["data"] = data
 	Respond(w, resp)
@@ -207,31 +200,13 @@ var TransferMoney = func(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
-	//проверим что аккаунт есть и узнаем баланс
-	err, balanceIdFrom := ReturnBalance(uint(idFrom))
-	if err != nil {
-		resp := Message(false, "error user_id")
-		resp["err"] = err.Error()
-		Respond(w, resp)
-		return
-	}
-	//проверим что аккаунт на который зачисляются деньги существует
-	if err, _ := ReturnBalance(uint(idTo)); err != nil {
-		resp := Message(false, "error user_id_to")
-		resp["err"] = err.Error()
-		Respond(w, resp)
-		return
-	}
-	//проверим что денег на балансе достаточно для списания
-	if balanceIdFrom < sum {
+
+	err1, data := DebitMoneyFromTo(uint(idFrom), uint(idTo), sum)
+	if err1 != nil {
 		resp := Message(false, "error")
-		resp["err"] = "не достаточно средств для списания"
+		resp["err"] = err1.Error()
 		Respond(w, resp)
-	} else {
-
-		data := DebitMoneyFromTo(uint(idFrom), uint(idTo), sum)
-
-		Respond(w, data)
+		return
 	}
-
+	Respond(w, data)
 }

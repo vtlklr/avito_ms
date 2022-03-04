@@ -39,14 +39,21 @@ func (transact *Transact) Create() (error, uint) {
 }
 
 //GetTrancacts возвращает все транзакции по указанному id аккаунта
-func GetTransactsFor(account uint) []*Transact {
+func GetTransactsFor(account uint) (error, []*Transact) {
+	err1, _ := ReturnBalance(account)
+	if err1 != nil {
 
+		return err1, nil
+	}
 	transacts := make([]*Transact, 0)
 	err := GetDB().Table("transacts").Where("account_id = ?", account).Find(&transacts).Error
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		//fmt.Println(err)
+		return err, nil
+	}
+	if len(transacts) == 0 {
+		return fmt.Errorf("нет транзакций"), nil
 	}
 
-	return transacts
+	return nil, transacts
 }
